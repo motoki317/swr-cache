@@ -1,4 +1,4 @@
-displayName: swr cache
+displayName: SWR Cache
 type: middleware
 
 import: github.com/motoki317/traefik-swr
