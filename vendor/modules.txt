@@ -1,0 +1,25 @@
+# github.com/davecgh/go-spew v1.1.1
+## explicit
+github.com/davecgh/go-spew/spew
+# github.com/motoki317/sc v1.6.0
+## explicit; go 1.18
+github.com/motoki317/sc
+github.com/motoki317/sc/lru
+github.com/motoki317/sc/lru/internal
+github.com/motoki317/sc/tq
+# github.com/pmezard/go-difflib v1.0.0
+## explicit
+github.com/pmezard/go-difflib/difflib
+# github.com/samber/lo v1.38.1
+## explicit; go 1.18
+github.com/samber/lo
+# github.com/stretchr/testify v1.7.1
+## explicit; go 1.13
+github.com/stretchr/testify/assert
+github.com/stretchr/testify/require
+# golang.org/x/exp v0.0.0-20220303212507-bbda1eaf7a17
+## explicit; go 1.18
+golang.org/x/exp/constraints
+# gopkg.in/yaml.v3 v3.0.0-20210107192922-496545a6307b
+## explicit
+gopkg.in/yaml.v3
