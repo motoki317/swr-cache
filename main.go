@@ -8,7 +8,6 @@ import (
 	"time"
 
 	"github.com/motoki317/sc"
-	"github.com/samber/lo"
 )
 
 type Config struct {
@@ -32,7 +31,6 @@ type plugin struct {
 	cache *sc.Cache[cacheKey, *response]
 }
 
-// New created a new Demo plugin.
 func New(_ context.Context, next http.Handler, config *Config, name string) (http.Handler, error) {
 	ttl, err := time.ParseDuration(config.TTL)
 	if err != nil {
@@ -63,7 +61,7 @@ var cacheableMethods = []string{
 }
 
 func (p *plugin) ServeHTTP(rw http.ResponseWriter, req *http.Request) {
-	if !lo.Contains(cacheableMethods, req.Method) {
+	if !contains(cacheableMethods, req.Method) {
 		p.next.ServeHTTP(rw, req)
 		return
 	}
