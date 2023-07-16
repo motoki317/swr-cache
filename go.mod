@@ -1,4 +1,4 @@
-module github.com/motoki317/traefik-swr
+module github.com/motoki317/swr-cache
 
 go 1.20
 

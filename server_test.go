@@ -1,4 +1,4 @@
-package traefikswr
+package swrcache
 
 import (
 	"context"
@@ -11,8 +11,8 @@ import (
 	"github.com/stretchr/testify/require"
 )
 
-func TestDemo(t *testing.T) {
-	cfg := CreateConfig()
+func TestServer_ServeHTTP(t *testing.T) {
+	var cfg Config
 	cfg.TTL = "60s"
 	cfg.Grace = "60s"
 
@@ -27,7 +27,7 @@ func TestDemo(t *testing.T) {
 		atomic.AddInt64(&called, 1)
 	})
 
-	handler, err := New(ctx, next, cfg, "swr")
+	handler, err := New(next, &cfg)
 	require.NoError(t, err)
 
 	// Test

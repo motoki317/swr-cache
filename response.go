@@ -1,4 +1,4 @@
-package traefikswr
+package swrcache
 
 import (
 	"bytes"

@@ -1,7 +1,7 @@
 displayName: SWR Cache
 type: middleware
 
-import: github.com/motoki317/traefik-swr
+import: github.com/motoki317/swr-cache/cmd/traefik
 
 summary: 'Dead simple swr cache'
 

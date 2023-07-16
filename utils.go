@@ -1,4 +1,4 @@
-package traefikswr
+package swrcache
 
 func contains[T comparable](s []T, target T) bool {
 	for _, elt := range s {

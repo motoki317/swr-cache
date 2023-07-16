@@ -1,8 +1,9 @@
-package traefikswr
+package swrcache
 
 import (
 	"context"
 	"fmt"
+	"io"
 	"log"
 	"net/http"
 	"time"
@@ -11,12 +12,8 @@ import (
 )
 
 type Config struct {
-	TTL   string `json:"ttl"`
-	Grace string `json:"grace"`
-}
-
-func CreateConfig() *Config {
-	return &Config{}
+	TTL   string
+	Grace string
 }
 
 type cacheKey struct {
@@ -24,14 +21,33 @@ type cacheKey struct {
 	url    string
 }
 
-type plugin struct {
-	name string
-	next http.Handler
-
+type server struct {
+	proxy http.Handler
 	cache *sc.Cache[cacheKey, *response]
 }
 
-func New(_ context.Context, next http.Handler, config *Config, name string) (http.Handler, error) {
+func New(config *Config) (http.Handler, error) {
+	proxy := http.HandlerFunc(func(rw http.ResponseWriter, req *http.Request) {
+		res, err := http.DefaultClient.Do(req)
+		if err != nil {
+			rw.WriteHeader(http.StatusInternalServerError)
+			_, _ = rw.Write([]byte(fmt.Sprintf("error on making request: %v", err)))
+			return
+		}
+		for k, v := range res.Header {
+			rw.Header()[k] = v
+		}
+		rw.WriteHeader(res.StatusCode)
+		_, err = io.Copy(rw, res.Body)
+		if err != nil {
+			_, _ = rw.Write([]byte(fmt.Sprintf("error on writing response body: %v", err)))
+			return
+		}
+	})
+	return NewWithProxy(config, proxy)
+}
+
+func NewWithProxy(config *Config, proxy http.Handler) (http.Handler, error) {
 	ttl, err := time.ParseDuration(config.TTL)
 	if err != nil {
 		return nil, fmt.Errorf("invalid ttl: %w", err)
@@ -44,9 +60,8 @@ func New(_ context.Context, next http.Handler, config *Config, name string) (htt
 		return nil, fmt.Errorf("invalid grace: %w", err)
 	}
 
-	p := &plugin{
-		name: name,
-		next: next,
+	p := &server{
+		proxy: proxy,
 	}
 	p.cache, err = sc.New(p.replace, ttl, ttl+grace, sc.WithCleanupInterval(ttl), sc.EnableStrictCoalescing())
 	if err != nil {
@@ -60,13 +75,13 @@ var cacheableMethods = []string{
 	"GET",
 }
 
-func (p *plugin) ServeHTTP(rw http.ResponseWriter, req *http.Request) {
+func (s *server) ServeHTTP(rw http.ResponseWriter, req *http.Request) {
 	if !contains(cacheableMethods, req.Method) {
-		p.next.ServeHTTP(rw, req)
+		s.proxy.ServeHTTP(rw, req)
 		return
 	}
 
-	res, err := p.cache.Get(req.Context(), cacheKey{
+	res, err := s.cache.Get(req.Context(), cacheKey{
 		method: req.Method,
 		url:    req.URL.String(),
 	})
@@ -87,12 +102,12 @@ func (p *plugin) ServeHTTP(rw http.ResponseWriter, req *http.Request) {
 	}
 }
 
-func (p *plugin) replace(ctx context.Context, key cacheKey) (*response, error) {
+func (s *server) replace(ctx context.Context, key cacheKey) (*response, error) {
 	res := newResponse()
 	req, err := http.NewRequestWithContext(ctx, key.method, key.url, nil)
 	if err != nil {
 		return nil, err
 	}
-	p.next.ServeHTTP(res, req)
+	s.proxy.ServeHTTP(res, req)
 	return res, nil
 }
