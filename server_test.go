@@ -27,7 +27,7 @@ func TestServer_ServeHTTP(t *testing.T) {
 		atomic.AddInt64(&called, 1)
 	})
 
-	handler, err := New(next, &cfg)
+	handler, err := NewWithProxy(&cfg, next)
 	require.NoError(t, err)
 
 	// Test
