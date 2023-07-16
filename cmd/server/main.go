@@ -10,14 +10,15 @@ import (
 )
 
 var (
-	ttl   = flag.String("ttl", "60s", "TTL of cache")
-	grace = flag.String("grace", "60s", "Grace period of cache")
-	port  = flag.Int("port", 8080, "Listen port of server")
+	ttl    = flag.String("ttl", "60s", "TTL of cache")
+	grace  = flag.String("grace", "60s", "Grace period of cache")
+	port   = flag.Int("port", 8080, "Listen port of server")
+	target = flag.String("target", "http://localhost", "Proxy target")
 )
 
 func main() {
 	flag.Parse()
-	handler, err := swrcache.New(&swrcache.Config{
+	handler, err := swrcache.New(*target, &swrcache.Config{
 		TTL:   *ttl,
 		Grace: *grace,
 	})
