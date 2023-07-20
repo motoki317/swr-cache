@@ -2,6 +2,7 @@ package swrcache
 
 import (
 	"context"
+	"errors"
 	"fmt"
 	"io"
 	"log"
@@ -37,6 +38,7 @@ func New(proxyTarget string, config *Config) (http.Handler, error) {
 		req.URL.User = targetURL.User
 		req.URL.Host = targetURL.Host
 
+		req = req.WithContext(context.Background()) // stop propagation of cancel; context.WithoutCancel
 		res, err := http.DefaultClient.Do(req)
 		if err != nil {
 			rw.WriteHeader(http.StatusInternalServerError)
@@ -84,6 +86,13 @@ var cacheableMethods = []string{
 	"GET",
 }
 
+var errNotCacheable = errors.New("response not cachable")
+
+func isCacheableCode(code int) bool {
+	is2xx := 200 <= code && code < 300
+	return is2xx
+}
+
 func (s *server) ServeHTTP(rw http.ResponseWriter, req *http.Request) {
 	if !contains(cacheableMethods, req.Method) {
 		s.proxy.ServeHTTP(rw, req)
@@ -94,10 +103,11 @@ func (s *server) ServeHTTP(rw http.ResponseWriter, req *http.Request) {
 		method: req.Method,
 		url:    req.URL.String(),
 	})
-	if err != nil {
+	if err != nil && !errors.Is(err, errNotCacheable) {
 		log.Printf("error on making request to upstream: %v\n", err)
 		return
 	}
+	// fall through and return response even if not cacheable
 
 	header := rw.Header()
 	for k, v := range res.headers {
@@ -118,5 +128,8 @@ func (s *server) replace(ctx context.Context, key cacheKey) (*response, error) {
 		return nil, err
 	}
 	s.proxy.ServeHTTP(res, req)
+	if !isCacheableCode(res.status) {
+		return res, errNotCacheable
+	}
 	return res, nil
 }
