@@ -25,5 +25,6 @@ func main() {
 	if err != nil {
 		panic(err)
 	}
+	log.Printf("swr-cache server listening at :%d ...\n", *port)
 	log.Fatal(http.ListenAndServe(fmt.Sprintf(":%d", *port), handler))
 }
